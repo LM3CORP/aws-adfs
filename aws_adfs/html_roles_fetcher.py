@@ -127,34 +127,37 @@ def fetch_html_encoded_roles(
     finally:
         os.umask(mask)
 
-    ##CUSTOM CODE - I had to send another request since context was not ready
-    response = session.post(
-        authentication_url,
-        verify=ssl_verification,
-        headers=_headers,
-        auth=auth,
-        data={
-            "__EVENTTARGET": "verificationOption0",
-            'AuthMethod': "AzureMfaServerAuthentication"
-        }
-    )    
-    html_response = ET.fromstring(response.text, ET.HTMLParser())
-    context_query = './/input[@id="context"]'
-    element = html_response.find(context_query)
-    context = element.get('value')
 
-    response = session.post(
-        authentication_url,
-        verify=ssl_verification,
-        headers=_headers,
-        auth=auth,
-        data={
-            "__EVENTTARGET": "verificationOption0",
-            'AuthMethod': "AzureMfaServerAuthentication",
-            'Context': context
-        }
-    )
-    ### CUSTOM  
+    if not "SAMLResponse" in response.text:  ##Little trick in case MFA is not required
+        ##CUSTOM CODE - I had to send another request since context was not ready
+        ##              This might require a different analysis but made it work with my current ADFS server setup
+        response = session.post(
+            authentication_url,
+            verify=ssl_verification,
+            headers=_headers,
+            auth=auth,
+            data={
+                "__EVENTTARGET": "verificationOption0",
+                'AuthMethod': "AzureMfaServerAuthentication"
+            }
+        )    
+        html_response = ET.fromstring(response.text, ET.HTMLParser())
+        context_query = './/input[@id="context"]'
+        element = html_response.find(context_query)
+        context = element.get('value')
+
+        response = session.post(
+            authentication_url,
+            verify=ssl_verification,
+            headers=_headers,
+            auth=auth,
+            data={
+                "__EVENTTARGET": "verificationOption0",
+                'AuthMethod': "AzureMfaServerAuthentication",
+                'Context': context
+            }
+        )
+        ### CUSTOM  
 
     del auth
     del data
