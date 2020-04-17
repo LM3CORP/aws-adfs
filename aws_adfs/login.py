@@ -105,6 +105,14 @@ from . import role_chooser
     default=None,
     help='Whether or not to also trigger the default authentication method when U2F is available (only works with Duo for now).',
 )
+@click.option(
+    '--username',
+    help='domain username as xyz@<domain>',
+)
+@click.option(
+    '--password',
+    help='domain password',
+)
 def login(
         profile,
         region,
@@ -124,6 +132,8 @@ def login(
         assertfile,
         sspi,
         u2f_trigger_default,
+        username,
+        password
 ):
     """
     Authenticates an user with active directory credentials
@@ -145,7 +155,15 @@ def login(
     _verification_checks(config)
 
     # Try re-authenticating using an existing ADFS session
-    principal_roles, assertion, aws_session_duration = authenticator.authenticate(config, assertfile=assertfile)
+    if username != None and password != None :
+        #print(username)
+        #print(password)
+        #exit(0)
+        principal_roles, assertion, aws_session_duration = authenticator.authenticate(config, username=username, password=password, assertfile=assertfile)
+    else:
+        principal_roles, assertion, aws_session_duration = authenticator.authenticate(config, assertfile=assertfile)
+
+    #principal_roles, assertion, aws_session_duration = authenticator.authenticate(config, assertfile=assertfile)
 
     # If we fail to get an assertion, prompt for credentials and try again
     if assertion is None:
